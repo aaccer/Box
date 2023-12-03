@@ -68,7 +68,7 @@ public class App extends MultiDexApplication {
 
         // Add JS support
         QuickJSLoader.init();
-        JiebaSegmenter.init(instance.getApplicationContext());
+        //JiebaSegmenter.init(instance.getApplicationContext());
     }
 
     public static P2PClass getp2p() {
