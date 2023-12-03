@@ -13,6 +13,7 @@ import com.github.tvbox.osc.util.LocaleHelper;
 import com.github.tvbox.osc.util.LOG;
 import com.github.tvbox.osc.util.OkGoHelper;
 import com.github.tvbox.osc.util.PlayerHelper;
+import com.jieba_android.JiebaSegmenter;
 import com.kingja.loadsir.core.LoadSir;
 import com.orhanobut.hawk.Hawk;
 import com.p2p.P2PClass;
@@ -67,6 +68,7 @@ public class App extends MultiDexApplication {
 
         // Add JS support
         QuickJSLoader.init();
+        JiebaSegmenter.init(instance.getApplicationContext());
     }
 
     public static P2PClass getp2p() {
