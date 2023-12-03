@@ -72,7 +72,7 @@ public class FastSearchActivity extends BaseActivity {
     private String searchFilterKey = "";    // 过滤的key
     private HashMap<String, ArrayList<Movie.Video>> resultVods; // 搜索结果
     private int finishedCount = 0;
-    private final List<String> quickSearchWord = new ArrayList<>();
+    private List<String> quickSearchWord = new ArrayList<>();
     private HashMap<String, String> mCheckSources = null;
 
     private final View.OnFocusChangeListener focusChangeListener = new View.OnFocusChangeListener() {
