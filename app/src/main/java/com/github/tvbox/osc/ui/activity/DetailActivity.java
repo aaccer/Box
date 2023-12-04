@@ -56,9 +56,8 @@ import com.github.tvbox.osc.util.SearchHelper;
 import com.github.tvbox.osc.util.SubtitleHelper;
 import com.github.tvbox.osc.util.thunder.Thunder;
 import com.github.tvbox.osc.viewmodel.SourceViewModel;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import com.jieba_android.JiebaSegmenter;
+import com.jieba_android.RequestCallback;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.AbsCallback;
 import com.lzy.okgo.model.Response;
@@ -766,7 +765,7 @@ public class DetailActivity extends BaseActivity {
     private String searchTitle = "";
     private boolean hadQuickStart = false;
     private final List<Movie.Video> quickSearchData = new ArrayList<>();
-    private final List<String> quickSearchWord = new ArrayList<>();
+    private List<String> quickSearchWord = new ArrayList<>();
     private ExecutorService searchExecutorService = null;
 
     private void switchSearchWord(String word) {
@@ -782,49 +781,27 @@ public class DetailActivity extends BaseActivity {
 
     private void startQuickSearch() {
         initCheckedSourcesForSearch();
-        if (hadQuickStart)
-            return;
+        if (hadQuickStart) return;
         hadQuickStart = true;
         OkGo.getInstance().cancelTag("quick_search");
         quickSearchWord.clear();
         searchTitle = mVideo.name;
         quickSearchData.clear();
-        quickSearchWord.add(searchTitle);
         // 分词
-        OkGo.<String>get("http://api.pullword.com/get.php?source=" + URLEncoder.encode(searchTitle) + "&param1=0&param2=0&json=1")
-                .tag("fenci")
-                .execute(new AbsCallback<String>() {
-                    @Override
-                    public String convertResponse(okhttp3.Response response) throws Throwable {
-                        if (response.body() != null) {
-                            return response.body().string();
-                        } else {
-                            throw new IllegalStateException("网络请求错误");
-                        }
-                    }
+        JiebaSegmenter.getJiebaSegmenterSingleton()
+            .getDividedStringAsync(searchTitle, new RequestCallback < ArrayList < String >> () {@Override
+            public void onSuccess(ArrayList < String > result) {
+                quickSearchWord = result;
+                searchResult();
+                EventBus.getDefault()
+                    .post(new RefreshEvent(RefreshEvent.TYPE_QUICK_SEARCH_WORD, quickSearchWord));
+            }
 
-                    @Override
-                    public void onSuccess(Response<String> response) {
-                        String json = response.body();
-                        quickSearchWord.clear();
-                        try {
-                            for (JsonElement je : new Gson().fromJson(json, JsonArray.class)) {
-                                quickSearchWord.add(je.getAsJsonObject().get("t").getAsString());
-                            }
-                        } catch (Throwable th) {
-                            th.printStackTrace();
-                        }
-                        quickSearchWord.add(searchTitle);
-                        EventBus.getDefault().post(new RefreshEvent(RefreshEvent.TYPE_QUICK_SEARCH_WORD, quickSearchWord));
-                    }
+            @Override
+            public void onError(String errorMsg) {
 
-                    @Override
-                    public void onError(Response<String> response) {
-                        super.onError(response);
-                    }
-                });
-
-        searchResult();
+            }
+        });
     }
 
     private void searchResult() {
