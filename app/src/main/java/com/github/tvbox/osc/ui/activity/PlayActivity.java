@@ -5,7 +5,6 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.PictureInPictureParams;
-import android.app.RemoteAction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -85,6 +84,7 @@ import com.github.tvbox.osc.util.LOG;
 import com.github.tvbox.osc.util.MD5;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.github.tvbox.osc.util.StringUtils;
+import com.github.tvbox.osc.util.SubtitleHelper;
 import com.github.tvbox.osc.util.VideoParseRuler;
 import com.github.tvbox.osc.util.XWalkUtils;
 import com.github.tvbox.osc.util.thunder.Jianpian;
@@ -394,13 +394,7 @@ public class PlayActivity extends BaseActivity {
     }
 
     void setSubtitleViewTextStyle(int style) {
-        if (style == 0) {
-            mController.mSubtitleView.setTextColor(getBaseContext().getResources().getColorStateList(R.color.color_FFFFFF));
-            mController.mSubtitleView.setShadowLayer(3, 2, 2, R.color.color_000000_80);
-        } else if (style == 1) {
-            mController.mSubtitleView.setTextColor(getBaseContext().getResources().getColorStateList(R.color.color_FFB6C1));
-            mController.mSubtitleView.setShadowLayer(3, 2, 2, R.color.color_FFFFFF);
-        }
+        SubtitleHelper.upTextStyle(mController.mSubtitleView,style);
     }
 
     void selectMyInternalSubtitle() {
@@ -922,6 +916,10 @@ public class PlayActivity extends BaseActivity {
                             subtitle.content = ss.toString();
                             mController.mSubtitleView.onSubtitleChanged(subtitle);
                         }
+                    } else {
+                        Subtitle subtitle = new Subtitle();
+                        subtitle.content = "";
+                        mController.mSubtitleView.onSubtitleChanged(subtitle);
                     }
                 }
             });
@@ -1144,14 +1142,16 @@ public class PlayActivity extends BaseActivity {
             } else {
                 ratio = new Rational(16, 9);
             }
-            List<RemoteAction> actions = new ArrayList<>();
-            actions.add(generateRemoteAction(android.R.drawable.ic_media_previous, BROADCAST_ACTION_PREV, "Prev", "Play Previous"));
-            actions.add(generateRemoteAction(android.R.drawable.ic_media_play, BROADCAST_ACTION_PLAYPAUSE, "Play/Pause", "Play or Pause"));
-            actions.add(generateRemoteAction(android.R.drawable.ic_media_next, BROADCAST_ACTION_NEXT, "Next", "Play Next"));
-            PictureInPictureParams params = new PictureInPictureParams.Builder()
-                    .setAspectRatio(ratio)
-                    .setActions(actions).build();
-            enterPictureInPictureMode(params);
+            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.O) {
+                List<android.app.RemoteAction> actions = new ArrayList<>();
+                actions.add(generateRemoteAction(android.R.drawable.ic_media_previous, BROADCAST_ACTION_PREV, "Prev", "Play Previous"));
+                actions.add(generateRemoteAction(android.R.drawable.ic_media_play, BROADCAST_ACTION_PLAYPAUSE, "Play/Pause", "Play or Pause"));
+                actions.add(generateRemoteAction(android.R.drawable.ic_media_next, BROADCAST_ACTION_NEXT, "Next", "Play Next"));
+                PictureInPictureParams params = new PictureInPictureParams.Builder()
+                        .setAspectRatio(ratio)
+                        .setActions(actions).build();
+                enterPictureInPictureMode(params);
+            }
             mController.hideBottom();
             mVideoView.postDelayed(() -> {
                 if (!mVideoView.isPlaying()) {
@@ -1208,7 +1208,7 @@ public class PlayActivity extends BaseActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private RemoteAction generateRemoteAction(int iconResId, int actionCode, String title, String desc) {
+    private android.app.RemoteAction generateRemoteAction(int iconResId, int actionCode, String title, String desc) {
 
         final PendingIntent intent =
                 PendingIntent.getBroadcast(
@@ -1217,7 +1217,7 @@ public class PlayActivity extends BaseActivity {
                         new Intent(BROADCAST_ACTION).putExtra("action", actionCode),
                         0);
         final Icon icon = Icon.createWithResource(PlayActivity.this, iconResId);
-        return (new RemoteAction(icon, title, desc, intent));
+        return (new android.app.RemoteAction(icon, title, desc, intent));
     }
 
     // takagen99 : PIP fix to close video when close window
